@@ -2,6 +2,8 @@
 
 Favspace is a playful, local-first Windows library for URLs, files, and folders. It stores references to local resources without moving or deleting the physical files.
 
+[![Windows CI](https://github.com/hburaksavas/favspace/actions/workflows/windows-ci.yml/badge.svg)](https://github.com/hburaksavas/favspace/actions/workflows/windows-ci.yml)
+
 ## First vertical slice
 
 - Add URLs and automatically cache page titles, descriptions, and favicons
@@ -83,9 +85,17 @@ npm run tauri -- build --debug --no-bundle
 
 The debug executable is generated at `src-tauri\target\debug\favspace.exe`.
 
-## Personal portable build
+## Public releases and code signing
 
-Favspace can be built as a single portable release executable and signed with a personal code-signing certificate. Create the certificate once:
+Public Windows releases must be built in GitHub Actions and signed with a certificate that chains to a publicly trusted certificate authority. The CI workflow builds and tests an explicitly named unsigned artifact for the signing service; it does not publish that artifact as a GitHub Release.
+
+The project is preparing a SignPath Foundation integration for trusted open-source code signing. Until that integration is approved and active, public release binaries may trigger Microsoft Defender SmartScreen and should not be presented as trusted production builds.
+
+Do not ask public users to install a self-signed certificate into Windows trusted-root stores. Self-signed signing is reserved for local development on machines controlled by the developer.
+
+## Personal development build
+
+For local development only, Favspace can be built as a single portable executable and signed with a certificate protected by the current Windows user's DPAPI credentials. Create the local certificate once:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\New-PersonalSigningCertificate.ps1
@@ -97,16 +107,14 @@ Then create and verify the signed portable executable:
 powershell -ExecutionPolicy Bypass -File scripts\Build-Portable.ps1
 ```
 
-The result is written to `artifacts\Favspace-Portable.exe`. The private key is stored as a DPAPI-protected file that only the current Windows user can decrypt; `artifacts\Favspace-Personal-Code-Signing.cer` contains only the public certificate. This is a cryptographic signature, but it has no public CA or Microsoft SmartScreen reputation. To show it as trusted, install the public certificate for the current user under **Trusted Root Certification Authorities** and **Trusted Publishers**. Another Windows account or computer must explicitly trust the same public certificate.
-
-On the personal Windows account that will run Favspace, the one-time trust step can be performed from a normal interactive PowerShell window. Windows may ask for confirmation before trusting the self-signed root:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\Trust-PersonalSigningCertificate.ps1
-```
+The result is written to `artifacts\Favspace-Portable.exe`. The private key is stored as a DPAPI-protected file that only the current Windows user can decrypt. This local signature does not create public CA trust or Microsoft SmartScreen reputation and must not be used for public releases.
 
 The portable artifact is a single executable, while its database and cached icons remain in the current user's application-data directory.
 
 ## Local data
 
 Favspace creates `favspace.db` and an `icons` directory under the per-user application data directory resolved by Tauri. Removing an item from Favspace only deletes its library record; the referenced file or folder is never deleted.
+
+## License
+
+Favspace is available under the [MIT License](LICENSE).
